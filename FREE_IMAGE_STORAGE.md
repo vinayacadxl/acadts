@@ -60,3 +60,4 @@ If you need larger images later, you can:
 
 But for now, **base64 storage is perfect and completely free!** 🎉
 
+

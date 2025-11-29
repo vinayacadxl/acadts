@@ -1,14 +1,12 @@
-// app/admin/questions/[id]/edit/page.tsx
 "use client";
 
-import { FormEvent, useCallback, useState, useEffect, useRef } from "react";
+import { FormEvent, useCallback, useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useUserProfile } from "@/lib/hooks/useUserProfile";
 import { getQuestionById, updateQuestion } from "@/lib/db/questions";
 import type { QuestionType, DifficultyLevel, QuestionInput } from "@/lib/types/question";
 import { sanitizeInput } from "@/lib/utils/validation";
-import { uploadImage, validateImageFile, deleteImage, getImageStorageConfig } from "@/lib/utils/imageStorage";
 import RichTextEditor from "@/components/RichTextEditor";
 
 const QUESTION_TYPES: { value: QuestionType; label: string }[] = [
@@ -42,11 +40,6 @@ export default function EditQuestionPage() {
   const [marks, setMarks] = useState<string>("4");
   const [penalty, setPenalty] = useState<string>("0");
   const [difficulty, setDifficulty] = useState<DifficultyLevel>("easy");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -74,7 +67,7 @@ export default function EditQuestionPage() {
         setSubject(question.subject);
         setTopic(question.topic);
         setTagsInput(question.tags.join(", "));
-        setText(question.text); // existing HTML content
+        setText(question.text); // TipTap HTML
         setExplanation(question.explanation || "");
         setMarks(question.marks.toString());
         setPenalty(question.penalty.toString());
@@ -94,12 +87,6 @@ export default function EditQuestionPage() {
 
         if (question.correctAnswer) {
           setCorrectAnswer(question.correctAnswer);
-        }
-
-        if (question.imageUrl) {
-          setImageUrl(question.imageUrl);
-          setOriginalImageUrl(question.imageUrl);
-          setImagePreview(question.imageUrl);
         }
 
         console.log("[EditQuestionPage] Question loaded successfully");
@@ -149,58 +136,6 @@ export default function EditQuestionPage() {
     [type]
   );
 
-  const handleImageChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) {
-        setImageFile(null);
-        if (!originalImageUrl) {
-          setImagePreview(null);
-        } else {
-          setImagePreview(originalImageUrl);
-        }
-        return;
-      }
-
-      const validation = validateImageFile(file);
-      if (!validation.isValid) {
-        setError(validation.error || "Invalid image file");
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-        return;
-      }
-
-      setImageFile(file);
-      setError(null);
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    },
-    [originalImageUrl]
-  );
-
-  const handleRemoveImage = useCallback(async () => {
-    setImageFile(null);
-    setImagePreview(null);
-    setImageUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-
-    if (originalImageUrl && !originalImageUrl.startsWith("data:")) {
-      try {
-        await deleteImage(originalImageUrl, "auto");
-        console.log("[EditQuestionPage] Original image deleted");
-      } catch (err) {
-        console.error("[EditQuestionPage] Error deleting original image:", err);
-      }
-    }
-  }, [originalImageUrl]);
-
   const handleSubmit = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -211,6 +146,7 @@ export default function EditQuestionPage() {
         return;
       }
 
+      // Basic validation
       const sanitizedSubject = sanitizeInput(subject).trim();
       const sanitizedTopic = sanitizeInput(topic).trim();
       const sanitizedText = text.trim(); // TipTap HTML
@@ -312,50 +248,17 @@ export default function EditQuestionPage() {
       setError(null);
 
       try {
-        // Handle image upload/update
-        let finalImageUrl: string | null = null;
-
-        if (imageFile) {
-          if (originalImageUrl) {
-            try {
-              await deleteImage(originalImageUrl);
-              console.log("[EditQuestionPage] Old image deleted");
-            } catch (err) {
-              console.warn("[EditQuestionPage] Could not delete old image:", err);
-            }
-          }
-
-          console.log("[EditQuestionPage] Uploading new image...");
-          const config = getImageStorageConfig();
-          const uploadResult = await uploadImage(imageFile, { ...config, folder: "questions" });
-          finalImageUrl = uploadResult.url;
-          console.log("[EditQuestionPage] New image uploaded:", {
-            url: finalImageUrl,
-            provider: uploadResult.provider,
-          });
-        } else if (imageUrl) {
-          finalImageUrl = imageUrl;
-        } else if (originalImageUrl) {
-          try {
-            await deleteImage(originalImageUrl);
-            console.log("[EditQuestionPage] Image removed and deleted from storage");
-          } catch (err) {
-            console.warn("[EditQuestionPage] Could not delete image:", err);
-          }
-          finalImageUrl = null;
-        }
-
         const updates: Partial<QuestionInput> = {
           type,
           subject: sanitizedSubject,
           topic: sanitizedTopic,
           tags,
           text: sanitizedText, // TipTap HTML
-          imageUrl: finalImageUrl,
+          // imageUrl removed: all images should be inside text via TipTap
           options: finalOptions,
           correctOptions: finalCorrectOptions,
           correctAnswer: finalCorrectAnswer,
-          explanation: sanitizedExplanation || null,
+          explanation: sanitizedExplanation || null, // TipTap HTML
           marks: parsedMarks,
           penalty: parsedPenalty,
           difficulty,
@@ -369,7 +272,9 @@ export default function EditQuestionPage() {
       } catch (err) {
         console.error("[EditQuestionPage] Error updating question:", err);
         const errorMessage =
-          err instanceof Error ? err.message : "Failed to update question. Please try again.";
+          err instanceof Error
+            ? err.message
+            : "Failed to update question. Please try again.";
         setError(errorMessage);
       } finally {
         setSubmitting(false);
@@ -391,9 +296,6 @@ export default function EditQuestionPage() {
       difficulty,
       type,
       router,
-      imageFile,
-      imageUrl,
-      originalImageUrl,
     ]
   );
 
@@ -544,9 +446,7 @@ export default function EditQuestionPage() {
                 <select
                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
                   value={difficulty}
-                  onChange={(e) =>
-                    setDifficulty(e.target.value as DifficultyLevel)
-                  }
+                  onChange={(e) => setDifficulty(e.target.value as DifficultyLevel)}
                 >
                   {DIFFICULTIES.map((d) => (
                     <option key={d.value} value={d.value}>
@@ -591,7 +491,7 @@ export default function EditQuestionPage() {
               </div>
             </div>
 
-            {/* Question Text - TipTap */}
+            {/* Question Text – Rich Editor */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">
                 Question Text
@@ -600,48 +500,8 @@ export default function EditQuestionPage() {
                 value={text}
                 onChange={setText}
                 placeholder="Write the question statement here..."
-                minHeight="160px"
+                minHeight="200px"
               />
-            </div>
-
-            {/* Question Image */}
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                Question Image (Optional)
-              </label>
-              {imagePreview && (
-                <div className="mb-2">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="max-w-full max-h-64 rounded border border-gray-200"
-                  />
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                onChange={handleImageChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-                aria-label="Upload question image"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Supported formats: JPEG, PNG, GIF, WebP. Max size: 500KB (completely free, no upgrade needed).
-                <br />
-                <span className="text-blue-600">
-                  💡 Tip: Use <a href="https://tinypng.com" target="_blank" rel="noopener noreferrer" className="underline">TinyPNG</a> or <a href="https://squoosh.app" target="_blank" rel="noopener noreferrer" className="underline">Squoosh</a> to compress images before uploading.
-                </span>
-              </p>
-              {imagePreview && (
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-                >
-                  Remove Image
-                </button>
-              )}
             </div>
 
             {/* Options / Correct answer based on type */}
@@ -652,10 +512,7 @@ export default function EditQuestionPage() {
                 </p>
                 <div className="space-y-2">
                   {options.map((opt, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2"
-                    >
+                    <div key={index} className="flex items-center gap-2">
                       {type === "mcq_single" ? (
                         <input
                           type="radio"
@@ -677,9 +534,7 @@ export default function EditQuestionPage() {
                         type="text"
                         className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
                         value={opt}
-                        onChange={(e) =>
-                          handleOptionChange(index, e.target.value)
-                        }
+                        onChange={(e) => handleOptionChange(index, e.target.value)}
                         placeholder={`Option ${index + 1}`}
                       />
                     </div>
@@ -711,7 +566,7 @@ export default function EditQuestionPage() {
               </div>
             )}
 
-            {/* Explanation - TipTap */}
+            {/* Explanation – Rich Editor */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">
                 Explanation (optional)
@@ -720,7 +575,7 @@ export default function EditQuestionPage() {
                 value={explanation}
                 onChange={setExplanation}
                 placeholder="Explanation, solution steps, or reasoning..."
-                minHeight="120px"
+                minHeight="150px"
               />
             </div>
 

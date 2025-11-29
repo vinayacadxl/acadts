@@ -8,7 +8,6 @@ import { getQuestionById } from "@/lib/db/questions";
 import type { Question } from "@/lib/types/question";
 import Link from "next/link";
 
-// TipTap for read-only rendering
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -37,7 +36,6 @@ export default function ViewQuestionPage() {
   useEffect(() => {
     setIsMounted(true);
 
-    // Load KaTeX CSS for math styling
     if (typeof window !== "undefined") {
       const existing = document.querySelector('link[href*="katex.min.css"]');
       if (!existing) {
@@ -58,7 +56,6 @@ export default function ViewQuestionPage() {
         codeBlock: {
           HTMLAttributes: { class: "code-block" },
         },
-        // we let Link/Underline come from separate extensions, but this is fine
       }),
       Image.configure({
         inline: true,
@@ -93,12 +90,11 @@ export default function ViewQuestionPage() {
     []
   );
 
-  // Read-only editors for question text and explanation
   const questionEditor = useEditor({
     extensions,
     content: "",
     editable: false,
-    immediatelyRender: false, // 👈 important for Next/SSR
+    immediatelyRender: false,
     autofocus: false,
   });
 
@@ -106,11 +102,10 @@ export default function ViewQuestionPage() {
     extensions,
     content: "",
     editable: false,
-    immediatelyRender: false, // 👈 important for Next/SSR
+    immediatelyRender: false,
     autofocus: false,
   });
 
-  // When question loads, set content
   useEffect(() => {
     if (questionEditor && question?.text) {
       questionEditor.commands.setContent(question.text);
@@ -169,8 +164,6 @@ export default function ViewQuestionPage() {
   const handleEdit = useCallback(() => {
     router.push(`/admin/questions/${questionId}/edit`);
   }, [router, questionId]);
-
-  // ---------- Render ----------
 
   if (authLoading || profileLoading || !isMounted) {
     return (
@@ -283,34 +276,13 @@ export default function ViewQuestionPage() {
             </div>
           </div>
 
-          {/* Question Text rendered by TipTap (read-only) */}
+          {/* Question Text (TipTap read-only) */}
           <div>
             <p className="text-xs text-gray-500 mb-2">Question</p>
             <div className="text-sm text-gray-900 bg-gray-50 rounded p-4">
               <EditorContent editor={questionEditor} />
             </div>
           </div>
-
-          {/* Question Image (optional, in case you still store a separate URL) */}
-          {question.imageUrl && (
-            <div>
-              <p className="text-xs text-gray-500 mb-2">Image</p>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <img
-                  src={question.imageUrl}
-                  alt="Question illustration"
-                  className="w-full h-auto max-h-96 object-contain bg-gray-50"
-                  onError={(e) => {
-                    console.error(
-                      "[ViewQuestionPage] Error loading image:",
-                      question.imageUrl
-                    );
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </div>
-            </div>
-          )}
 
           {/* Options (for MCQs) */}
           {(question.type === "mcq_single" ||
@@ -359,7 +331,7 @@ export default function ViewQuestionPage() {
             </div>
           )}
 
-          {/* Explanation rendered by TipTap (read-only) */}
+          {/* Explanation (TipTap read-only) */}
           {question.explanation && explanationEditor && (
             <div>
               <p className="text-xs text-gray-500 mb-2">Explanation</p>

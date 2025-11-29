@@ -1,14 +1,12 @@
-// app/admin/questions/new/page.tsx
 "use client";
 
-import { FormEvent, useCallback, useState, useEffect, useRef } from "react";
+import { FormEvent, useCallback, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useUserProfile } from "@/lib/hooks/useUserProfile";
 import { createQuestion } from "@/lib/db/questions";
 import type { QuestionType, DifficultyLevel, QuestionInput } from "@/lib/types/question";
 import { sanitizeInput } from "@/lib/utils/validation";
-import { uploadImage, validateImageFile, getImageStorageConfig } from "@/lib/utils/imageStorage";
 import RichTextEditor from "@/components/RichTextEditor";
 
 const QUESTION_TYPES: { value: QuestionType; label: string }[] = [
@@ -32,18 +30,14 @@ export default function NewQuestionPage() {
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [tagsInput, setTagsInput] = useState("");
-  const [text, setText] = useState(""); // now HTML from TipTap
+  const [text, setText] = useState(""); // TipTap HTML
   const [options, setOptions] = useState<string[]>(["", "", "", ""]);
   const [correctOptions, setCorrectOptions] = useState<number[]>([]);
   const [correctAnswer, setCorrectAnswer] = useState<string>("");
-  const [explanation, setExplanation] = useState(""); // now HTML from TipTap
+  const [explanation, setExplanation] = useState(""); // TipTap HTML
   const [marks, setMarks] = useState<string>("4");
   const [penalty, setPenalty] = useState<string>("0");
   const [difficulty, setDifficulty] = useState<DifficultyLevel>("easy");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +86,7 @@ export default function NewQuestionPage() {
       // Basic validation
       const sanitizedSubject = sanitizeInput(subject).trim();
       const sanitizedTopic = sanitizeInput(topic).trim();
-      const sanitizedText = text.trim(); // TipTap HTML string
+      const sanitizedText = text.trim(); // TipTap HTML
       const sanitizedExplanation = explanation.trim() || "";
 
       if (!sanitizedSubject) {
@@ -158,12 +152,8 @@ export default function NewQuestionPage() {
 
         // Map original indices to new indices after filtering
         const validIndices = correctOptions
-          .filter((originalIdx) => {
-            return originalToNewIndex.has(originalIdx);
-          })
-          .map((originalIdx) => {
-            return originalToNewIndex.get(originalIdx)!;
-          });
+          .filter((originalIdx) => originalToNewIndex.has(originalIdx))
+          .map((originalIdx) => originalToNewIndex.get(originalIdx)!);
 
         if (validIndices.length === 0) {
           setError("Selected correct options must correspond to non-empty options.");
@@ -197,32 +187,17 @@ export default function NewQuestionPage() {
       setError(null);
 
       try {
-        // Upload image if provided
-        let finalImageUrl: string | null = null;
-        if (imageFile) {
-          console.log("[NewQuestionPage] Uploading image...");
-          const config = getImageStorageConfig();
-          const uploadResult = await uploadImage(imageFile, config);
-          finalImageUrl = uploadResult.url;
-          console.log("[NewQuestionPage] Image uploaded:", {
-            url: finalImageUrl,
-            provider: uploadResult.provider,
-          });
-        } else if (imageUrl) {
-          finalImageUrl = imageUrl;
-        }
-
         const input: QuestionInput = {
           type,
           subject: sanitizedSubject,
           topic: sanitizedTopic,
           tags,
           text: sanitizedText, // TipTap HTML
-          imageUrl: finalImageUrl,
+          // imageUrl removed: all images should be inside text via TipTap
           options: finalOptions,
           correctOptions: finalCorrectOptions,
           correctAnswer: finalCorrectAnswer,
-          explanation: sanitizedExplanation || null, // TipTap HTML or null
+          explanation: sanitizedExplanation || null, // TipTap HTML
           marks: parsedMarks,
           penalty: parsedPenalty,
           difficulty,
@@ -257,51 +232,12 @@ export default function NewQuestionPage() {
       difficulty,
       type,
       router,
-      imageFile,
-      imageUrl,
     ]
   );
 
   const handleCancel = useCallback(() => {
     router.push("/admin/questions");
   }, [router]);
-
-  const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      setImageFile(null);
-      setImagePreview(null);
-      return;
-    }
-
-    const validation = validateImageFile(file);
-    if (!validation.isValid) {
-      setError(validation.error || "Invalid image file");
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      return;
-    }
-
-    setImageFile(file);
-    setError(null);
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }, []);
-
-  const handleRemoveImage = useCallback(() => {
-    setImageFile(null);
-    setImagePreview(null);
-    setImageUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }, []);
 
   // Check admin access
   useEffect(() => {
@@ -420,9 +356,7 @@ export default function NewQuestionPage() {
                 <select
                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
                   value={type}
-                  onChange={(e) =>
-                    setType(e.target.value as QuestionType)
-                  }
+                  onChange={(e) => setType(e.target.value as QuestionType)}
                 >
                   {QUESTION_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -439,9 +373,7 @@ export default function NewQuestionPage() {
                 <select
                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
                   value={difficulty}
-                  onChange={(e) =>
-                    setDifficulty(e.target.value as DifficultyLevel)
-                  }
+                  onChange={(e) => setDifficulty(e.target.value as DifficultyLevel)}
                 >
                   {DIFFICULTIES.map((d) => (
                     <option key={d.value} value={d.value}>
@@ -486,7 +418,7 @@ export default function NewQuestionPage() {
               </div>
             </div>
 
-            {/* Question Text - TipTap */}
+            {/* Question Text – Rich Editor */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">
                 Question Text
@@ -495,46 +427,8 @@ export default function NewQuestionPage() {
                 value={text}
                 onChange={setText}
                 placeholder="Write the question statement here..."
-                minHeight="160px"
+                minHeight="200px"
               />
-            </div>
-
-            {/* Question Image */}
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                Question Image (Optional)
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                onChange={handleImageChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-                aria-label="Upload question image"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Supported formats: JPEG, PNG, GIF, WebP. Max size: 500KB (completely free, no upgrade needed).
-                <br />
-                <span className="text-blue-600">
-                  💡 Tip: Use <a href="https://tinypng.com" target="_blank" rel="noopener noreferrer" className="underline">TinyPNG</a> or <a href="https://squoosh.app" target="_blank" rel="noopener noreferrer" className="underline">Squoosh</a> to compress images before uploading.
-                </span>
-              </p>
-              {imagePreview && (
-                <div className="mt-3 relative">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="max-w-full max-h-64 rounded border border-gray-200"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-                  >
-                    Remove Image
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Options / Correct answer based on type */}
@@ -545,10 +439,7 @@ export default function NewQuestionPage() {
                 </p>
                 <div className="space-y-2">
                   {options.map((opt, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2"
-                    >
+                    <div key={index} className="flex items-center gap-2">
                       {type === "mcq_single" ? (
                         <input
                           type="radio"
@@ -570,9 +461,7 @@ export default function NewQuestionPage() {
                         type="text"
                         className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
                         value={opt}
-                        onChange={(e) =>
-                          handleOptionChange(index, e.target.value)
-                        }
+                        onChange={(e) => handleOptionChange(index, e.target.value)}
                         placeholder={`Option ${index + 1}`}
                       />
                     </div>
@@ -604,7 +493,7 @@ export default function NewQuestionPage() {
               </div>
             )}
 
-            {/* Explanation - TipTap */}
+            {/* Explanation – Rich Editor */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">
                 Explanation (optional)
@@ -613,7 +502,7 @@ export default function NewQuestionPage() {
                 value={explanation}
                 onChange={setExplanation}
                 placeholder="Explanation, solution steps, or reasoning..."
-                minHeight="120px"
+                minHeight="150px"
               />
             </div>
 
