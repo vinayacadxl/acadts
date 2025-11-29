@@ -365,8 +365,8 @@ export default function EditQuestionPage() {
           tags,
           text: sanitizedText, // TipTap HTML
           // imageUrl removed: all images should be inside text via TipTap
-          options: finalOptions,
-          correctOptions: finalCorrectOptions,
+          ...(finalOptions !== undefined && { options: finalOptions }),
+          ...(finalCorrectOptions !== undefined && { correctOptions: finalCorrectOptions }),
           correctAnswer: finalCorrectAnswer,
           explanation: sanitizedExplanation || null, // TipTap HTML
           marks: parsedMarks,

@@ -216,13 +216,15 @@ export default function NewQuestionPage() {
 
         finalOptions = nonEmptyOptions;
 
+        // Check if at least 2 options are filled in
         if (finalOptions.length < 2) {
-          setError("At least 2 options are required for MCQ questions.");
+          setError(`At least 2 option text fields must be filled in for MCQ questions. You currently have ${finalOptions.length} filled option${finalOptions.length === 1 ? '' : 's'}. Please fill in at least 2 option text fields.`);
           return;
         }
 
+        // Check if at least one correct option is selected
         if (correctOptions.length === 0) {
-          setError("Please select at least one correct option.");
+          setError("Please select at least one correct option by checking the boxes.");
           return;
         }
 
@@ -231,13 +233,27 @@ export default function NewQuestionPage() {
           .filter((originalIdx) => originalToNewIndex.has(originalIdx))
           .map((originalIdx) => originalToNewIndex.get(originalIdx)!);
 
+        // Check if selected correct options correspond to filled options
         if (validIndices.length === 0) {
-          setError("Selected correct options must correspond to non-empty options.");
+          const selectedEmptyIndices = correctOptions.filter(idx => !originalToNewIndex.has(idx));
+          setError(`You've selected option${selectedEmptyIndices.length > 1 ? 's' : ''} ${selectedEmptyIndices.map(i => i + 1).join(', ')} as correct, but ${selectedEmptyIndices.length > 1 ? 'they are' : 'it is'} empty. Please fill in the text for the option${selectedEmptyIndices.length > 1 ? 's' : ''} you've selected as correct.`);
+          return;
+        }
+
+        // Check if all selected correct options are valid
+        if (correctOptions.length > validIndices.length) {
+          const invalidIndices = correctOptions.filter(idx => !originalToNewIndex.has(idx));
+          setError(`You've selected option${invalidIndices.length > 1 ? 's' : ''} ${invalidIndices.map(i => i + 1).join(', ')} as correct, but ${invalidIndices.length > 1 ? 'they are' : 'it is'} empty. Please fill in the text for all selected options.`);
           return;
         }
 
         if (type === "mcq_single" && validIndices.length !== 1) {
-          setError("Single correct MCQ must have exactly one correct option.");
+          setError("Single correct MCQ must have exactly one correct option selected.");
+          return;
+        }
+
+        if (type === "mcq_multiple" && validIndices.length < 1) {
+          setError("Multiple correct MCQ must have at least one correct option selected.");
           return;
         }
 
@@ -272,8 +288,8 @@ export default function NewQuestionPage() {
           tags,
           text: sanitizedText, // TipTap HTML
           // imageUrl removed: all images should be inside text via TipTap
-          options: finalOptions,
-          correctOptions: finalCorrectOptions,
+          ...(finalOptions !== undefined && { options: finalOptions }),
+          ...(finalCorrectOptions !== undefined && { correctOptions: finalCorrectOptions }),
           correctAnswer: finalCorrectAnswer,
           explanation: sanitizedExplanation || null, // TipTap HTML
           marks: parsedMarks,

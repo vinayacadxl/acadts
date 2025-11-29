@@ -63,13 +63,18 @@ export async function createQuestion(
     throw error;
   }
 
+  // Remove undefined values to avoid Firestore errors
+  const cleanInput = Object.fromEntries(
+    Object.entries(input).filter(([_, value]) => value !== undefined)
+  ) as QuestionInput;
+
   const docData: Omit<QuestionDoc, "createdAt" | "updatedAt"> & {
     createdAt: ReturnType<typeof serverTimestamp>;
     updatedAt: ReturnType<typeof serverTimestamp>;
   } = {
-    ...input,
-    explanation: input.explanation ?? null,
-    correctAnswer: input.correctAnswer ?? null,
+    ...cleanInput,
+    explanation: cleanInput.explanation ?? null,
+    correctAnswer: cleanInput.correctAnswer ?? null,
     createdBy: adminUid,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
