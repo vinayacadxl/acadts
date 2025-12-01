@@ -34,6 +34,7 @@ export default function AdminQuestionsPage() {
   const [filterType, setFilterType] = useState<QuestionType | "">("");
   const [filterDifficulty, setFilterDifficulty] = useState<DifficultyLevel | "">("");
   const [showFilters, setShowFilters] = useState(false);
+  const [searchCustomId, setSearchCustomId] = useState("");
 
   // Load subjects data for filters
   const subjects = getSubjects();
@@ -95,8 +96,17 @@ export default function AdminQuestionsPage() {
     router.push("/admin/questions/new");
   }, [router]);
 
-  // Questions are already filtered from database, just use them directly
-  const filteredQuestions = allQuestions;
+  // Filter questions by custom ID (client-side filtering)
+  const filteredQuestions = useMemo(() => {
+    if (!searchCustomId.trim()) {
+      return allQuestions;
+    }
+    const searchLower = searchCustomId.toLowerCase().trim();
+    return allQuestions.filter((q) => {
+      const customIdLower = (q.customId || "").toLowerCase();
+      return customIdLower.includes(searchLower);
+    });
+  }, [allQuestions, searchCustomId]);
 
   // Reset dependent filters when parent changes
   useEffect(() => {
@@ -268,6 +278,20 @@ export default function AdminQuestionsPage() {
             {error}
           </div>
         )}
+
+        {/* Search by Custom ID */}
+        <div className="mb-4 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+          <label className="block mb-2 text-sm font-medium text-gray-700">
+            Search by Custom ID
+          </label>
+          <input
+            type="text"
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            value={searchCustomId}
+            onChange={(e) => setSearchCustomId(e.target.value)}
+            placeholder="e.g. PHY-001, MATH-2024-01"
+          />
+        </div>
 
         {/* Filter Section */}
         <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
@@ -459,6 +483,9 @@ export default function AdminQuestionsPage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-2 font-medium text-gray-700">
+                    Custom ID
+                  </th>
+                  <th className="text-left px-4 py-2 font-medium text-gray-700">
                     Subject
                   </th>
                   <th className="text-left px-4 py-2 font-medium text-gray-700">
@@ -490,6 +517,15 @@ export default function AdminQuestionsPage() {
                     key={q.id}
                     className="border-b last:border-b-0 border-gray-100"
                   >
+                    <td className="px-4 py-2">
+                      {q.customId ? (
+                        <span className="font-mono text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                          {q.customId}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-gray-900">{q.subject}</td>
                     <td className="px-4 py-2 text-gray-700">{q.chapter || 'N/A'}</td>
                     <td className="px-4 py-2 text-gray-700">{q.topic}</td>

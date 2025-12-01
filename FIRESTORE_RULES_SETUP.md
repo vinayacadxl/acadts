@@ -53,3 +53,4 @@ The rules allow:
 Make sure your user has the `role: "admin"` field in the `users/{userId}` document in Firestore. You can check this in Firebase Console under Firestore Database → `users` collection.
 
 
+

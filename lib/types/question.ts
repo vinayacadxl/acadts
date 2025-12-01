@@ -12,6 +12,7 @@ export interface QuestionDoc {
   chapter?: string;              // e.g. "Mechanics" (optional for backward compatibility)
   topic: string;                // e.g. "Kinematics"
   subtopic?: string;             // e.g. "1D Motion" (optional for backward compatibility)
+  customId?: string;             // Custom/manual ID for easy identification (optional)
   tags: string[];               // e.g. ["1D-motion", "JEE Main"]
 
   // Question content
@@ -45,6 +46,7 @@ export interface QuestionInput {
   chapter: string;
   topic: string;
   subtopic: string;
+  customId?: string;
   tags: string[];
   text: string;
   imageUrl?: string | null;

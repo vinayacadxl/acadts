@@ -23,6 +23,7 @@ export default function NewTestPage() {
   const [loadingQuestions, setLoadingQuestions] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchCustomId, setSearchCustomId] = useState("");
 
   // Load questions from question bank
   useEffect(() => {
@@ -275,9 +276,25 @@ export default function NewTestPage() {
 
             {/* Question Selection */}
             <div>
-              <h2 className="text-lg font-medium text-gray-900 mb-4">
-                Select Questions ({selectedQuestions.size} selected)
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-gray-900">
+                  Select Questions ({selectedQuestions.size} selected)
+                </h2>
+              </div>
+
+              {/* Search by Custom ID */}
+              <div className="mb-4">
+                <label className="block mb-1 text-sm font-medium text-gray-700">
+                  Search by Custom ID
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                  value={searchCustomId}
+                  onChange={(e) => setSearchCustomId(e.target.value)}
+                  placeholder="e.g. PHY-001, MATH-2024-01"
+                />
+              </div>
 
               {loadingQuestions ? (
                 <div className="text-center py-8 text-gray-600">
@@ -299,6 +316,9 @@ export default function NewTestPage() {
                           Subject / Chapter / Topic
                         </th>
                         <th className="text-left px-4 py-2 font-medium text-gray-700">
+                          Custom ID
+                        </th>
+                        <th className="text-left px-4 py-2 font-medium text-gray-700">
                           Type
                         </th>
                         <th className="text-left px-4 py-2 font-medium text-gray-700">
@@ -313,7 +333,14 @@ export default function NewTestPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {questions.map((q) => {
+                      {questions
+                        .filter((q) => {
+                          if (!searchCustomId.trim()) return true;
+                          const searchLower = searchCustomId.toLowerCase().trim();
+                          const customIdLower = (q.customId || "").toLowerCase();
+                          return customIdLower.includes(searchLower);
+                        })
+                        .map((q) => {
                         const isSelected = selectedQuestions.has(q.id);
                         const scoring = selectedQuestions.get(q.id);
                         return (
@@ -340,6 +367,15 @@ export default function NewTestPage() {
                                 {q.topic}
                                 {q.subtopic && ` / ${q.subtopic}`}
                               </div>
+                            </td>
+                            <td className="px-4 py-2">
+                              {q.customId ? (
+                                <span className="font-mono text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                                  {q.customId}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 text-xs">—</span>
+                              )}
                             </td>
                             <td className="px-4 py-2 text-gray-700">
                               {q.type === "mcq_single"
@@ -423,5 +459,6 @@ export default function NewTestPage() {
     </main>
   );
 }
+
 
 

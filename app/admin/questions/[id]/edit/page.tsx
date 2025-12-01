@@ -46,6 +46,7 @@ export default function EditQuestionPage() {
   const [topicId, setTopicId] = useState("");
   const [topicName, setTopicName] = useState("");
   const [subtopic, setSubtopic] = useState("");
+  const [customId, setCustomId] = useState("");
   const [tagsInput, setTagsInput] = useState("");
 
   // Load subjects data
@@ -113,6 +114,7 @@ export default function EditQuestionPage() {
         }
         
         setSubtopic(question.subtopic || "");
+        setCustomId(question.customId || "");
         setTagsInput(question.tags.join(", "));
         setText(question.text); // TipTap HTML
         setExplanation(question.explanation || "");
@@ -356,12 +358,15 @@ export default function EditQuestionPage() {
       setError(null);
 
       try {
+        const sanitizedCustomId = customId.trim() || undefined;
+        
         const updates: Partial<QuestionInput> = {
           type,
           subject: sanitizedSubject,
           chapter: sanitizedChapter,
           topic: sanitizedTopic,
           subtopic: sanitizedSubtopic,
+          customId: sanitizedCustomId,
           tags,
           text: sanitizedText, // TipTap HTML
           // imageUrl removed: all images should be inside text via TipTap
@@ -400,6 +405,7 @@ export default function EditQuestionPage() {
       topicId,
       topicName,
       subtopic,
+      customId,
       text,
       explanation,
       tagsInput,
@@ -589,6 +595,23 @@ export default function EditQuestionPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Custom ID */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">
+                Custom ID
+              </label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                value={customId}
+                onChange={(e) => setCustomId(e.target.value)}
+                placeholder="e.g. PHY-001, MATH-2024-01"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Optional. A custom identifier to easily identify this question (e.g., PHY-001, MATH-2024-01).
+              </p>
             </div>
 
             {/* Tags */}

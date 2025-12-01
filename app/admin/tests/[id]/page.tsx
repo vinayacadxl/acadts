@@ -186,10 +186,15 @@ export default function ViewTestPage() {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="text-sm font-medium text-gray-900">
                             Q{index + 1}.
                           </span>
+                          {question?.customId && (
+                            <span className="font-mono text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                              {question.customId}
+                            </span>
+                          )}
                           {question ? (
                             <>
                               <span className="text-xs text-gray-600">
@@ -243,5 +248,6 @@ export default function ViewTestPage() {
     </main>
   );
 }
+
 
 

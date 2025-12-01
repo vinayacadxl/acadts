@@ -235,6 +235,16 @@ export default function ViewQuestionPage() {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm space-y-6">
+          {/* Custom ID - Prominently displayed at the top */}
+          {question.customId && (
+            <div className="pb-4 border-b border-gray-200">
+              <p className="text-xs text-gray-500 mb-1">Custom ID</p>
+              <span className="font-mono text-base font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded inline-block">
+                {question.customId}
+              </span>
+            </div>
+          )}
+
           {/* Metadata */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4 pb-4 border-b border-gray-200">
             <div>
