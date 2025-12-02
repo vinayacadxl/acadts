@@ -18,6 +18,7 @@ export default function NewTestSeriesPage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [price, setPrice] = useState<string>("");
   const [tests, setTests] = useState<Test[]>([]);
   const [selectedTestIds, setSelectedTestIds] = useState<Set<string>>(new Set());
   const [loadingTests, setLoadingTests] = useState(true);
@@ -70,6 +71,7 @@ export default function NewTestSeriesPage() {
       // Basic validation
       const sanitizedTitle = sanitizeInput(title).trim();
       const sanitizedDescription = sanitizeInput(description).trim();
+      const priceValue = parseFloat(price);
 
       if (!sanitizedTitle) {
         setError("Test series title is required.");
@@ -81,6 +83,11 @@ export default function NewTestSeriesPage() {
         return;
       }
 
+      if (isNaN(priceValue) || priceValue < 0) {
+        setError("Please enter a valid price (must be a positive number).");
+        return;
+      }
+
       setSubmitting(true);
       setError(null);
 
@@ -89,6 +96,7 @@ export default function NewTestSeriesPage() {
           title: sanitizedTitle,
           description: sanitizedDescription,
           testIds: Array.from(selectedTestIds),
+          price: priceValue,
         };
 
         console.log("[NewTestSeriesPage] Final TestSeriesInput:", input);
@@ -108,7 +116,7 @@ export default function NewTestSeriesPage() {
         setSubmitting(false);
       }
     },
-    [user, title, description, selectedTestIds, router]
+    [user, title, description, price, selectedTestIds, router]
   );
 
   const handleCancel = useCallback(() => {
@@ -189,6 +197,26 @@ export default function NewTestSeriesPage() {
                     placeholder="Brief description of the test series..."
                     rows={3}
                   />
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                    Price <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-gray-500 text-sm">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="w-full border border-gray-300 rounded px-3 py-2 pl-7 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">Enter the price for this test series</p>
                 </div>
               </div>
             </div>
@@ -295,5 +323,6 @@ export default function NewTestSeriesPage() {
     </main>
   );
 }
+
 
 

@@ -6,6 +6,7 @@ export interface TestSeriesDoc {
   description: string;
   thumbnail?: string; // URL to thumbnail image (optional for now)
   testIds: string[]; // Array of test document IDs
+  price?: number; // Price in the base currency (e.g., USD) - optional for backward compatibility
   createdAt: Timestamp;
   updatedAt: Timestamp;
   createdBy: string; // Admin UID
@@ -20,6 +21,8 @@ export interface TestSeriesInput {
   description: string;
   thumbnail?: string;
   testIds: string[];
+  price: number;
 }
+
 
 

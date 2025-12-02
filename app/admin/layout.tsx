@@ -94,13 +94,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <div
         className={`${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 fixed md:static inset-y-0 left-0 z-40 transition-transform duration-300 ease-in-out`}
+        } md:translate-x-0 fixed inset-y-0 left-0 z-40 transition-transform duration-300 ease-in-out`}
       >
         <AdminSidebar onNavigate={() => setSidebarOpen(false)} />
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto w-full md:w-auto">{children}</main>
+      <main className="flex-1 overflow-auto w-full md:ml-64">{children}</main>
     </div>
   );
 }

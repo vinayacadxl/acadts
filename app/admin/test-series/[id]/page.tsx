@@ -160,7 +160,13 @@ export default function ViewTestSeriesPage() {
           </div>
 
           {/* Test Series Information */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pb-4 border-b border-gray-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-4 border-b border-gray-200">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Price</p>
+              <p className="text-sm font-medium text-gray-900">
+                ${testSeries.price?.toFixed(2) || "0.00"}
+              </p>
+            </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Total Tests</p>
               <p className="text-sm font-medium text-gray-900">
@@ -245,5 +251,6 @@ export default function ViewTestSeriesPage() {
     </main>
   );
 }
+
 
 

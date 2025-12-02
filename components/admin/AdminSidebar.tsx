@@ -50,7 +50,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   );
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
+    <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col overflow-y-auto">
       {/* Logo */}
       <div className="p-4 sm:p-6 border-b border-gray-200">
         <h1 className="text-lg sm:text-xl font-bold text-gray-900">TestPrep Pro</h1>
