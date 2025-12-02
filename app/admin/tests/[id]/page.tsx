@@ -6,7 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useUserProfile } from "@/lib/hooks/useUserProfile";
-import { getTestById } from "@/lib/db/tests";
+import { getTestById, updateTest } from "@/lib/db/tests";
 import { getQuestionById } from "@/lib/db/questions";
 import type { Test } from "@/lib/types/test";
 import type { Question } from "@/lib/types/question";
@@ -179,10 +179,60 @@ export default function ViewTestPage() {
             <div className="space-y-3">
               {test.questions.map((tq, index) => {
                 const question = questions.get(tq.questionId);
+                const handleQuestionClick = () => {
+                  if (question) {
+                    router.push(`/admin/questions/${tq.questionId}?fromTest=${testId}`);
+                  }
+                };
+                
+                const handleDeleteFromTest = async (e: React.MouseEvent) => {
+                  e.stopPropagation(); // Prevent triggering the question click
+                  
+                  const confirmed = window.confirm(
+                    `Are you sure you want to remove this question from the test?\n\nThis will not delete the question from the question bank.`
+                  );
+                  
+                  if (!confirmed) return;
+                  
+                  try {
+                    // Remove the question from the test's questions array
+                    const updatedQuestions = test.questions
+                      .filter((q) => q.questionId !== tq.questionId)
+                      .map((q, idx) => ({ ...q, order: idx + 1 })); // Reorder
+                    
+                    await updateTest(testId, { questions: updatedQuestions });
+                    
+                    // Update local state
+                    setTest((prev) => {
+                      if (!prev) return null;
+                      return {
+                        ...prev,
+                        questions: updatedQuestions,
+                      };
+                    });
+                    
+                    // Remove from questions map
+                    setQuestions((prev) => {
+                      const newMap = new Map(prev);
+                      newMap.delete(tq.questionId);
+                      return newMap;
+                    });
+                  } catch (err) {
+                    console.error("[ViewTestPage] Error removing question from test:", err);
+                    const errorMessage =
+                      err instanceof Error
+                        ? err.message
+                        : "Failed to remove question from test.";
+                    setError(errorMessage);
+                  }
+                };
                 return (
                   <div
                     key={tq.questionId}
-                    className="border border-gray-200 rounded p-4 bg-gray-50"
+                    onClick={handleQuestionClick}
+                    className={`border border-gray-200 rounded p-4 bg-gray-50 ${
+                      question ? "cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-colors" : ""
+                    }`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
@@ -226,16 +276,26 @@ export default function ViewTestPage() {
                           </div>
                         )}
                       </div>
-                      <div className="ml-4 text-right">
-                        <div className="text-xs text-gray-500 mb-1">Scoring</div>
-                        <div className="text-sm font-medium text-gray-900">
-                          +{tq.marks}
-                        </div>
-                        {tq.negativeMarks > 0 && (
-                          <div className="text-xs text-red-600">
-                            -{tq.negativeMarks}
+                      <div className="ml-4 flex flex-col items-end gap-2">
+                        <div className="text-right">
+                          <div className="text-xs text-gray-500 mb-1">Scoring</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            +{tq.marks}
                           </div>
-                        )}
+                          {tq.negativeMarks > 0 && (
+                            <div className="text-xs text-red-600">
+                              -{tq.negativeMarks}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={handleDeleteFromTest}
+                          className="text-xs px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 transition-colors"
+                          aria-label={`Remove question ${tq.questionId} from test`}
+                          title="Remove from test (does not delete from question bank)"
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
                   </div>

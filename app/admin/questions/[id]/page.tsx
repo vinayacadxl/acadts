@@ -27,6 +27,17 @@ export default function ViewQuestionPage() {
   const questionId = params?.id as string;
   const { user, loading: authLoading } = useAuth();
   const { role, loading: profileLoading } = useUserProfile();
+  
+  // Check if we're viewing from a test (via query parameter)
+  const [fromTestId, setFromTestId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      const testId = searchParams.get("fromTest");
+      setFromTestId(testId);
+    }
+  }, []);
 
   const [question, setQuestion] = useState<Question | null>(null);
   const [loading, setLoading] = useState(true);
@@ -216,22 +227,24 @@ export default function ViewQuestionPage() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <Link
-              href="/admin/questions"
+              href={fromTestId ? `/admin/tests/${fromTestId}` : "/admin/questions"}
               className="text-sm text-blue-600 hover:text-blue-800 underline mb-2 inline-block"
             >
-              ← Back to Questions
+              ← {fromTestId ? "Back to Test" : "Back to Questions"}
             </Link>
             <h1 className="text-2xl font-semibold text-gray-900">
               View Question
             </h1>
           </div>
-          <button
-            onClick={handleEdit}
-            className="bg-black hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-            aria-label="Edit question"
-          >
-            Edit Question
-          </button>
+          {!fromTestId && (
+            <button
+              onClick={handleEdit}
+              className="bg-black hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+              aria-label="Edit question"
+            >
+              Edit Question
+            </button>
+          )}
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm space-y-6">
