@@ -556,14 +556,14 @@ export default function AdminQuestionsPage() {
                     <td className="px-4 py-2 space-x-2">
                       <button
                         onClick={() => router.push(`/admin/questions/${q.id}`)}
-                        className="text-xs px-2 py-1 rounded border border-blue-300 text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
+                        className="text-xs px-2 py-1 rounded border border-blue-300 text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 cursor-pointer"
                         aria-label={`View question ${q.id}`}
                       >
                         View
                       </button>
                       <button
                         onClick={() => handleEdit(q.id)}
-                        className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                        className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 cursor-pointer"
                         aria-label={`Edit question ${q.id}`}
                       >
                         Edit
@@ -571,7 +571,7 @@ export default function AdminQuestionsPage() {
                       <button
                         onClick={() => handleDelete(q.id)}
                         disabled={deletingId === q.id}
-                        className="text-xs px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1"
+                        className="text-xs px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 cursor-pointer"
                         aria-label={`Delete question ${q.id}`}
                       >
                         {deletingId === q.id ? "Deleting..." : "Delete"}

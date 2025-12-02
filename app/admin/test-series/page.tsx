@@ -1,18 +1,18 @@
-// app/admin/tests/page.tsx
+// app/admin/test-series/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useUserProfile } from "@/lib/hooks/useUserProfile";
-import { listTests, deleteTest } from "@/lib/db/tests";
-import type { Test } from "@/lib/types/test";
+import { listTestSeries, deleteTestSeries } from "@/lib/db/testSeries";
+import type { TestSeries } from "@/lib/types/testSeries";
 
-export default function AdminTestsPage() {
+export default function AdminTestSeriesPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { role, loading: profileLoading } = useUserProfile();
-  const [tests, setTests] = useState<Test[]>([]);
+  const [testSeries, setTestSeries] = useState<TestSeries[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -20,20 +20,20 @@ export default function AdminTestsPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
 
-  const fetchTests = useCallback(async () => {
-    console.log("[AdminTestsPage] Fetching tests");
+  const fetchTestSeries = useCallback(async () => {
+    console.log("[AdminTestSeriesPage] Fetching test series");
     setLoading(true);
     setError(null);
 
     try {
-      const data = await listTests();
-      console.log("[AdminTestsPage] Tests loaded:", {
+      const data = await listTestSeries();
+      console.log("[AdminTestSeriesPage] Test series loaded:", {
         count: data.length,
       });
-      setTests(data);
+      setTestSeries(data);
     } catch (err) {
-      console.error("[AdminTestsPage] Error fetching tests:", err);
-      setError("Failed to load tests. Please try again.");
+      console.error("[AdminTestSeriesPage] Error fetching test series:", err);
+      setError("Failed to load test series. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -43,85 +43,93 @@ export default function AdminTestsPage() {
     if (authLoading || profileLoading) return;
 
     if (!user) {
-      console.log("[AdminTestsPage] No user, redirecting to login");
+      console.log("[AdminTestSeriesPage] No user, redirecting to login");
       router.replace("/login");
       return;
     }
 
     if (role !== "admin") {
-      console.log("[AdminTestsPage] Non-admin user, redirecting to dashboard");
+      console.log("[AdminTestSeriesPage] Non-admin user, redirecting to dashboard");
       router.replace("/dashboard");
       return;
     }
 
-    fetchTests();
-  }, [authLoading, profileLoading, user, role, router, fetchTests]);
+    fetchTestSeries();
+  }, [authLoading, profileLoading, user, role, router, fetchTestSeries]);
 
   const handleCreateClick = useCallback(() => {
-    router.push("/admin/tests/new");
+    router.push("/admin/test-series/new");
   }, [router]);
 
   const handleDelete = useCallback(
     async (id: string) => {
-      const test = tests.find((t) => t.id === id);
-      const label = test ? test.title : id;
+      const series = testSeries.find((s) => s.id === id);
+      const label = series ? series.title : id;
 
       const confirmed = typeof window !== "undefined"
         ? window.confirm(
-            `Are you sure you want to delete this test?\n\n${label}`
+            `Are you sure you want to delete this test series?\n\n${label}`
           )
         : false;
 
       if (!confirmed) return;
 
-      console.log("[AdminTestsPage] Deleting test:", id);
+      console.log("[AdminTestSeriesPage] Deleting test series:", id);
       setDeletingId(id);
 
       try {
-        await deleteTest(id);
-        console.log("[AdminTestsPage] Test deleted:", id);
+        await deleteTestSeries(id);
+        console.log("[AdminTestSeriesPage] Test series deleted:", id);
         // Optimistically update local state
-        setTests((prev) => prev.filter((t) => t.id !== id));
+        setTestSeries((prev) => prev.filter((s) => s.id !== id));
         setError(null); // Clear any previous errors on success
       } catch (err) {
-        console.error("[AdminTestsPage] Error deleting test:", err);
+        console.error("[AdminTestSeriesPage] Error deleting test series:", err);
         const errorMessage =
           err instanceof Error
             ? err.message
-            : "Failed to delete test. Please try again.";
+            : "Failed to delete test series. Please try again.";
         setError(errorMessage);
         // Refresh the list to ensure consistency
-        fetchTests();
+        fetchTestSeries();
       } finally {
         setDeletingId(null);
       }
     },
-    [tests, fetchTests]
+    [testSeries, fetchTestSeries]
   );
 
   const handleView = useCallback(
     (id: string) => {
-      router.push(`/admin/tests/${id}`);
+      router.push(`/admin/test-series/${id}`);
     },
     [router]
   );
 
-  const filteredTests = tests.filter((test) =>
-    test.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (test.description && test.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  const handleEdit = useCallback(
+    (id: string) => {
+      router.push(`/admin/test-series/${id}/edit`);
+    },
+    [router]
+  );
+
+  const filteredTestSeries = testSeries.filter((series) =>
+    series.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleMenuClick = useCallback(
-    (id: string, action: "view" | "delete") => {
+    (id: string, action: "view" | "edit" | "delete") => {
       if (action === "view") {
         handleView(id);
+      } else if (action === "edit") {
+        handleEdit(id);
       } else if (action === "delete") {
         handleDelete(id);
       }
       setOpenMenuId(null);
       setMenuPosition(null);
     },
-    [handleView, handleDelete]
+    [handleView, handleEdit, handleDelete]
   );
 
   const handleToggleMenu = useCallback((e: React.MouseEvent<HTMLButtonElement>, id: string) => {
@@ -177,7 +185,7 @@ export default function AdminTestsPage() {
   if (loading) {
     return (
       <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading tests...</p>
+        <p className="text-gray-600">Loading test series...</p>
       </div>
     );
   }
@@ -186,8 +194,8 @@ export default function AdminTestsPage() {
     <div className="pt-16 md:pt-8 p-4 md:p-8 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-1">Tests</h1>
-        <p className="text-sm text-gray-600">Create and manage your tests.</p>
+        <h1 className="text-2xl font-semibold text-gray-900 mb-1">Test Series</h1>
+        <p className="text-sm text-gray-600">Create and manage your test series.</p>
       </div>
 
       {/* Search and Add Button */}
@@ -204,10 +212,10 @@ export default function AdminTestsPage() {
         <button
           onClick={handleCreateClick}
           className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-2 cursor-pointer"
-          aria-label="Add new test"
+          aria-label="Add new series"
         >
           <span className="text-lg">+</span>
-          <span>Add New Test</span>
+          <span>Add New Series</span>
         </button>
       </div>
 
@@ -218,17 +226,17 @@ export default function AdminTestsPage() {
       )}
 
       {/* Table */}
-      {filteredTests.length === 0 ? (
+      {filteredTestSeries.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
           <p className="text-sm text-gray-600 mb-4">
-            {searchQuery ? "No tests found matching your search." : "No tests found."}
+            {searchQuery ? "No test series found matching your search." : "No test series found."}
           </p>
           {!searchQuery && (
             <button
               onClick={handleCreateClick}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 cursor-pointer"
             >
-              Create your first test
+              Create your first test series
             </button>
           )}
         </div>
@@ -242,13 +250,13 @@ export default function AdminTestsPage() {
                   Title
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Description
+                  Class
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Duration
+                  Subjects
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Questions
+                  Price
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Actions
@@ -256,25 +264,23 @@ export default function AdminTestsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTests.map((test) => (
-                <tr key={test.id} className="hover:bg-gray-50 transition-colors">
+              {filteredTestSeries.map((series) => (
+                <tr key={series.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{test.title}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-600 max-w-md truncate">
-                      {test.description || "—"}
-                    </div>
+                    <div className="text-sm font-medium text-gray-900">{series.title}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{test.durationMinutes} min</div>
+                    <div className="text-sm text-gray-600">12th</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{test.questions.length}</div>
+                    <div className="text-sm text-gray-600">PCM</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">$49.99</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
-                      onClick={(e) => handleToggleMenu(e, test.id)}
+                      onClick={(e) => handleToggleMenu(e, series.id)}
                       data-dropdown-toggle
                       className="text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer p-1 rounded hover:bg-gray-100 transition-colors"
                       aria-label="More options"
@@ -314,6 +320,12 @@ export default function AdminTestsPage() {
               View
             </button>
             <button
+              onClick={() => handleMenuClick(openMenuId, "edit")}
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
+            >
+              Edit
+            </button>
+            <button
               onClick={() => handleMenuClick(openMenuId, "delete")}
               disabled={deletingId === openMenuId}
               className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer transition-colors"
@@ -326,9 +338,5 @@ export default function AdminTestsPage() {
     </div>
   );
 }
-
-
-
-
 
 

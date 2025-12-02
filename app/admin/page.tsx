@@ -15,32 +15,47 @@ export default function AdminHome() {
     router.push("/admin/tests");
   }, [router]);
 
+  const handleTestSeriesClick = useCallback(() => {
+    router.push("/admin/test-series");
+  }, [router]);
+
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold mb-2 text-gray-900">Admin Panel</h1>
+    <div className="pt-16 md:pt-8 p-4 md:p-8 bg-gray-50 min-h-screen">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-1">Dashboard</h1>
+        <p className="text-sm text-gray-600">Manage questions, tests, and platform data.</p>
+      </div>
 
-        <p className="text-sm mb-6 text-gray-600">
-          Manage questions, tests, and platform data.
-        </p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <button
+          onClick={handleQuestionsClick}
+          className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow text-left cursor-pointer"
+          aria-label="Manage questions"
+        >
+          <div className="text-3xl mb-3">❓</div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">Questions</h2>
+          <p className="text-sm text-gray-600">Manage question bank</p>
+        </button>
 
-        <div className="flex flex-col space-y-3">
-          <button
-            onClick={handleQuestionsClick}
-            className="w-full bg-black hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-            aria-label="Manage questions"
-          >
-            Manage Questions
-          </button>
+        <button
+          onClick={handleTestsClick}
+          className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow text-left cursor-pointer"
+          aria-label="Manage tests"
+        >
+          <div className="text-3xl mb-3">📝</div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">Tests</h2>
+          <p className="text-sm text-gray-600">Create and manage tests</p>
+        </button>
 
-          <button
-            onClick={handleTestsClick}
-            className="w-full bg-black hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-            aria-label="Manage tests"
-          >
-            Manage Tests
-          </button>
-        </div>
+        <button
+          onClick={handleTestSeriesClick}
+          className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow text-left cursor-pointer"
+          aria-label="Manage test series"
+        >
+          <div className="text-3xl mb-3">📚</div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">Test Series</h2>
+          <p className="text-sm text-gray-600">Group tests into series</p>
+        </button>
       </div>
     </div>
   );

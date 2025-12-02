@@ -1,0 +1,332 @@
+// app/admin/test-series/[id]/edit/page.tsx
+"use client";
+
+import { FormEvent, useCallback, useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { useUserProfile } from "@/lib/hooks/useUserProfile";
+import { getTestSeriesById, updateTestSeries } from "@/lib/db/testSeries";
+import { listTests } from "@/lib/db/tests";
+import type { Test } from "@/lib/types/test";
+import type { TestSeriesInput } from "@/lib/types/testSeries";
+import { sanitizeInput } from "@/lib/utils/validation";
+
+export default function EditTestSeriesPage() {
+  const router = useRouter();
+  const params = useParams();
+  const testSeriesId = params?.id as string;
+  const { user, loading: authLoading } = useAuth();
+  const { role, loading: profileLoading } = useUserProfile();
+
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [tests, setTests] = useState<Test[]>([]);
+  const [selectedTestIds, setSelectedTestIds] = useState<Set<string>>(new Set());
+  const [loadingSeries, setLoadingSeries] = useState(true);
+  const [loadingTests, setLoadingTests] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load test series data
+  useEffect(() => {
+    const loadTestSeries = async () => {
+      if (!testSeriesId) return;
+
+      try {
+        setLoadingSeries(true);
+        const seriesData = await getTestSeriesById(testSeriesId);
+        if (!seriesData) {
+          setError("Test series not found.");
+          setLoadingSeries(false);
+          return;
+        }
+
+        setTitle(seriesData.title);
+        setDescription(seriesData.description || "");
+        setSelectedTestIds(new Set(seriesData.testIds));
+        setLoadingSeries(false);
+      } catch (err) {
+        console.error("[EditTestSeriesPage] Error loading test series:", err);
+        setError("Failed to load test series. Please try again.");
+        setLoadingSeries(false);
+      }
+    };
+
+    if (user && role === "admin") {
+      loadTestSeries();
+    }
+  }, [user, role, testSeriesId]);
+
+  // Load all tests
+  useEffect(() => {
+    const loadTests = async () => {
+      try {
+        setLoadingTests(true);
+        const data = await listTests();
+        setTests(data);
+      } catch (err) {
+        console.error("[EditTestSeriesPage] Error loading tests:", err);
+        setError("Failed to load tests. Please try again.");
+      } finally {
+        setLoadingTests(false);
+      }
+    };
+
+    if (user && role === "admin") {
+      loadTests();
+    }
+  }, [user, role]);
+
+  // Handle test selection
+  const handleTestToggle = useCallback((testId: string) => {
+    setSelectedTestIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(testId)) {
+        newSet.delete(testId);
+      } else {
+        newSet.add(testId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleSubmit = useCallback(
+    async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      console.log("[EditTestSeriesPage] Form submitted, attempting to update test series");
+
+      if (!user) {
+        setError("You must be logged in to update test series.");
+        return;
+      }
+
+      // Basic validation
+      const sanitizedTitle = sanitizeInput(title).trim();
+      const sanitizedDescription = sanitizeInput(description).trim();
+
+      if (!sanitizedTitle) {
+        setError("Test series title is required.");
+        return;
+      }
+
+      if (selectedTestIds.size === 0) {
+        setError("Please select at least one test for the series.");
+        return;
+      }
+
+      setSubmitting(true);
+      setError(null);
+
+      try {
+        const updates: Partial<TestSeriesInput> = {
+          title: sanitizedTitle,
+          description: sanitizedDescription,
+          testIds: Array.from(selectedTestIds),
+        };
+
+        console.log("[EditTestSeriesPage] Final updates:", updates);
+
+        await updateTestSeries(testSeriesId, updates);
+        console.log("[EditTestSeriesPage] Test series updated");
+
+        router.push(`/admin/test-series/${testSeriesId}`);
+      } catch (err) {
+        console.error("[EditTestSeriesPage] Error updating test series:", err);
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to update test series. Please try again.";
+        setError(errorMessage);
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [user, testSeriesId, title, description, selectedTestIds, router]
+  );
+
+  const handleCancel = useCallback(() => {
+    router.push(`/admin/test-series/${testSeriesId}`);
+  }, [router, testSeriesId]);
+
+  if (authLoading || profileLoading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="p-4 text-gray-600">Checking admin access...</p>
+      </main>
+    );
+  }
+
+  if (!user || role !== "admin") {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="p-4 text-gray-600">Redirecting...</p>
+      </main>
+    );
+  }
+
+  if (loadingSeries || loadingTests) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="p-4 text-gray-600">Loading...</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Edit Test Series
+            </h1>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="text-sm text-gray-600 hover:text-gray-800 underline focus:outline-none"
+            >
+              Cancel
+            </button>
+          </div>
+
+          {error && (
+            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            {/* Basic Test Series Information */}
+            <div className="border-b border-gray-200 pb-4">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Test Series Information</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                    Series Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. JEE Main Test Series 2024"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Brief description of the test series..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Test Selection */}
+            <div>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Select Tests ({selectedTestIds.size} selected)
+              </h2>
+
+              {tests.length === 0 ? (
+                <div className="text-center py-8 text-gray-600 border border-dashed border-gray-300 rounded">
+                  No tests available. Please create tests first.
+                </div>
+              ) : (
+                <div className="border border-gray-200 rounded-lg max-h-96 overflow-y-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+                      <tr>
+                        <th className="text-left px-4 py-2 font-medium text-gray-700 w-12">
+                          Select
+                        </th>
+                        <th className="text-left px-4 py-2 font-medium text-gray-700">
+                          Title
+                        </th>
+                        <th className="text-left px-4 py-2 font-medium text-gray-700">
+                          Description
+                        </th>
+                        <th className="text-left px-4 py-2 font-medium text-gray-700">
+                          Duration
+                        </th>
+                        <th className="text-left px-4 py-2 font-medium text-gray-700">
+                          Questions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tests.map((test) => {
+                        const isSelected = selectedTestIds.has(test.id);
+                        return (
+                          <tr
+                            key={test.id}
+                            className={`border-b last:border-b-0 ${
+                              isSelected ? "bg-blue-50" : ""
+                            }`}
+                          >
+                            <td className="px-4 py-2">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4"
+                                checked={isSelected}
+                                onChange={() => handleTestToggle(test.id)}
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <div className="text-gray-900 font-medium">
+                                {test.title}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2">
+                              <div className="text-gray-600 text-sm line-clamp-2">
+                                {test.description || "—"}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2 text-gray-700">
+                              {test.durationMinutes} min
+                            </td>
+                            <td className="px-4 py-2 text-gray-700">
+                              {test.questions.length}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Submit Buttons */}
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-4 py-2 text-sm border border-gray-300 rounded text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-4 py-2 text-sm bg-black hover:bg-gray-900 text-white rounded disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+              >
+                {submitting ? "Updating..." : "Update Test Series"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+

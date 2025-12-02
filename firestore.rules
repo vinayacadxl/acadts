@@ -30,15 +30,23 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
-    // Tests collection - only admins can manage
-    match /tests/{testId} {
-      allow read: if isAuthenticated();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
-    }
-    
-    // Default deny all other collections
+            // Tests collection - only admins can manage
+            match /tests/{testId} {
+              allow read: if isAuthenticated();
+              allow create: if isAdmin();
+              allow update: if isAdmin();
+              allow delete: if isAdmin();
+            }
+
+            // TestSeries collection - only admins can manage
+            match /testSeries/{testSeriesId} {
+              allow read: if isAuthenticated();
+              allow create: if isAdmin();
+              allow update: if isAdmin();
+              allow delete: if isAdmin();
+            }
+
+            // Default deny all other collections
     match /{document=**} {
       allow read, write: if false;
     }
