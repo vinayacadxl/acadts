@@ -33,7 +33,6 @@ export default function AdminQuestionsPage() {
   const [filterSubtopic, setFilterSubtopic] = useState("");
   const [filterType, setFilterType] = useState<QuestionType | "">("");
   const [filterDifficulty, setFilterDifficulty] = useState<DifficultyLevel | "">("");
-  const [showFilters, setShowFilters] = useState(false);
   const [searchCustomId, setSearchCustomId] = useState("");
 
   // Load subjects data for filters
@@ -158,6 +157,7 @@ export default function AdminQuestionsPage() {
   };
 
   const handleClearFilters = useCallback(() => {
+    setSearchCustomId("");
     setFilterSubjectId("");
     setFilterSubjectName("");
     setFilterChapterId("");
@@ -171,6 +171,7 @@ export default function AdminQuestionsPage() {
 
   const hasActiveFilters = useMemo(() => {
     return !!(
+      searchCustomId.trim() ||
       filterSubjectName ||
       filterChapterName ||
       filterTopicName ||
@@ -178,7 +179,7 @@ export default function AdminQuestionsPage() {
       filterType ||
       filterDifficulty
     );
-  }, [filterSubjectName, filterChapterName, filterTopicName, filterSubtopic, filterType, filterDifficulty]);
+  }, [searchCustomId, filterSubjectName, filterChapterName, filterTopicName, filterSubtopic, filterType, filterDifficulty]);
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -253,7 +254,7 @@ export default function AdminQuestionsPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">
@@ -279,47 +280,37 @@ export default function AdminQuestionsPage() {
           </div>
         )}
 
-        {/* Search by Custom ID */}
-        <div className="mb-4 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-          <label className="block mb-2 text-sm font-medium text-gray-700">
-            Search by Custom ID
-          </label>
-          <input
-            type="text"
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-            value={searchCustomId}
-            onChange={(e) => setSearchCustomId(e.target.value)}
-            placeholder="e.g. PHY-001, MATH-2024-01"
-          />
-        </div>
-
         {/* Filter Section */}
         <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-2 rounded text-sm border transition-colors ${
-                showFilters
-                  ? "bg-black text-white border-black"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-              }`}
-            >
-              {showFilters ? "Hide Filters" : "Show Filters"}
-            </button>
+            <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
             {hasActiveFilters && (
               <button
                 onClick={handleClearFilters}
-                className="px-4 py-2 rounded text-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 rounded text-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 Clear All
               </button>
-              )}
+            )}
           </div>
 
           {/* Filter Panel */}
-          {showFilters && (
-            <div className="border-t border-gray-200 pt-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-4">
+            {/* Custom ID Search */}
+            <div>
+              <label className="block mb-1 text-xs font-medium text-gray-700">
+                Search by Custom ID
+              </label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                value={searchCustomId}
+                onChange={(e) => setSearchCustomId(e.target.value)}
+                placeholder="e.g. PHY-001, MATH-2024-01"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Subject Filter */}
                 <div>
                   <label className="block mb-1 text-xs font-medium text-gray-700">
@@ -435,17 +426,16 @@ export default function AdminQuestionsPage() {
                   </select>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Results Count */}
-          <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
-            Showing {filteredQuestions.length} of {allQuestions.length} question{allQuestions.length !== 1 ? 's' : ''}
-            {hasActiveFilters && (
-              <span className="ml-2 text-gray-500">
-                (filtered)
-              </span>
-            )}
+            {/* Results Count */}
+            <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
+              Showing {filteredQuestions.length} of {allQuestions.length} question{allQuestions.length !== 1 ? 's' : ''}
+              {hasActiveFilters && (
+                <span className="ml-2 text-gray-500">
+                  (filtered)
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -482,31 +472,31 @@ export default function AdminQuestionsPage() {
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="text-left px-4 py-2 font-medium text-gray-700">
+                  <th className="text-left px-6 py-3 font-medium text-gray-700 whitespace-nowrap">
                     Custom ID
                   </th>
-                  <th className="text-left px-4 py-2 font-medium text-gray-700">
+                  <th className="text-left px-6 py-3 font-medium text-gray-700 whitespace-nowrap">
                     Subject
                   </th>
-                  <th className="text-left px-4 py-2 font-medium text-gray-700">
+                  <th className="text-left px-6 py-3 font-medium text-gray-700 whitespace-nowrap">
                     Chapter
                   </th>
-                  <th className="text-left px-4 py-2 font-medium text-gray-700">
+                  <th className="text-left px-6 py-3 font-medium text-gray-700 whitespace-nowrap">
                     Topic
                   </th>
-                  <th className="text-left px-4 py-2 font-medium text-gray-700">
+                  <th className="text-left px-6 py-3 font-medium text-gray-700 whitespace-nowrap">
                     Subtopic
                   </th>
-                  <th className="text-left px-4 py-2 font-medium text-gray-700">
+                  <th className="text-left px-6 py-3 font-medium text-gray-700 whitespace-nowrap">
                     Type
                   </th>
-                  <th className="text-left px-4 py-2 font-medium text-gray-700">
+                  <th className="text-left px-6 py-3 font-medium text-gray-700 whitespace-nowrap">
                     Difficulty
                   </th>
-                  <th className="text-left px-4 py-2 font-medium text-gray-700">
+                  <th className="text-left px-6 py-3 font-medium text-gray-700 whitespace-nowrap">
                     Marks
                   </th>
-                  <th className="text-left px-4 py-2 font-medium text-gray-700">
+                  <th className="text-left px-6 py-3 font-medium text-gray-700 whitespace-nowrap">
                     Actions
                   </th>
                 </tr>
@@ -515,9 +505,9 @@ export default function AdminQuestionsPage() {
                 {filteredQuestions.map((q) => (
                   <tr
                     key={q.id}
-                    className="border-b last:border-b-0 border-gray-100"
+                    className="border-b last:border-b-0 border-gray-100 hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-4 py-2">
+                    <td className="px-6 py-3">
                       {q.customId ? (
                         <span className="font-mono text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded">
                           {q.customId}
@@ -526,18 +516,18 @@ export default function AdminQuestionsPage() {
                         <span className="text-gray-400 text-xs">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-gray-900">{q.subject}</td>
-                    <td className="px-4 py-2 text-gray-700">{q.chapter || 'N/A'}</td>
-                    <td className="px-4 py-2 text-gray-700">{q.topic}</td>
-                    <td className="px-4 py-2 text-gray-700">{q.subtopic || 'N/A'}</td>
-                    <td className="px-4 py-2 text-gray-700">
+                    <td className="px-6 py-3 text-gray-900 whitespace-nowrap">{q.subject}</td>
+                    <td className="px-6 py-3 text-gray-700 whitespace-nowrap">{q.chapter || 'N/A'}</td>
+                    <td className="px-6 py-3 text-gray-700 whitespace-nowrap">{q.topic}</td>
+                    <td className="px-6 py-3 text-gray-700 whitespace-nowrap">{q.subtopic || 'N/A'}</td>
+                    <td className="px-6 py-3 text-gray-700 whitespace-nowrap">
                       {q.type === "mcq_single"
                         ? "MCQ (Single)"
                         : q.type === "mcq_multiple"
                         ? "MCQ (Multiple)"
                         : "Numerical"}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-6 py-3 whitespace-nowrap">
                       <span
                         className={
                           "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " +
@@ -552,30 +542,32 @@ export default function AdminQuestionsPage() {
                           q.difficulty.slice(1)}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-gray-700">{q.marks}</td>
-                    <td className="px-4 py-2 space-x-2">
-                      <button
-                        onClick={() => router.push(`/admin/questions/${q.id}`)}
-                        className="text-xs px-2 py-1 rounded border border-blue-300 text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 cursor-pointer"
-                        aria-label={`View question ${q.id}`}
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleEdit(q.id)}
-                        className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 cursor-pointer"
-                        aria-label={`Edit question ${q.id}`}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(q.id)}
-                        disabled={deletingId === q.id}
-                        className="text-xs px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 cursor-pointer"
-                        aria-label={`Delete question ${q.id}`}
-                      >
-                        {deletingId === q.id ? "Deleting..." : "Delete"}
-                      </button>
+                    <td className="px-6 py-3 text-gray-700 whitespace-nowrap">{q.marks}</td>
+                    <td className="px-6 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => router.push(`/admin/questions/${q.id}`)}
+                          className="text-xs px-3 py-1.5 rounded border border-blue-300 text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 cursor-pointer transition-colors"
+                          aria-label={`View question ${q.id}`}
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => handleEdit(q.id)}
+                          className="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 cursor-pointer transition-colors"
+                          aria-label={`Edit question ${q.id}`}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(q.id)}
+                          disabled={deletingId === q.id}
+                          className="text-xs px-3 py-1.5 rounded border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 cursor-pointer transition-colors"
+                          aria-label={`Delete question ${q.id}`}
+                        >
+                          {deletingId === q.id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
